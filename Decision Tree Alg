@@ -1,0 +1,40 @@
+import math
+
+data = [
+    ['Sunny', 'No'],
+    ['Sunny', 'No'],
+    ['Overcast', 'Yes'],
+    ['Rain', 'Yes'],
+    ['Rain', 'Yes'],
+    ['Rain', 'No'],
+    ['Overcast', 'Yes'],
+    ['Sunny', 'No'],
+    ['Sunny', 'Yes'],
+    ['Rain', 'Yes']
+]
+
+def entropy(rows):
+    yes = sum(r[1] == 'Yes' for r in rows)
+    no = len(rows) - yes
+
+    if yes == 0 or no == 0:
+        return 0
+
+    p1 = yes / len(rows)
+    p2 = no / len(rows)
+    return -p1 * math.log2(p1) - p2 * math.log2(p2)
+
+def id3(rows):
+    values = set(r[0] for r in rows)
+
+    for value in values:
+        subset = [r for r in rows if r[0] == value]
+        print(value, "->", subset[0][1] if entropy(subset) == 0 else "Mixed")
+
+id3(data)
+
+sample = 'Sunny'
+result = [r[1] for r in data if r[0] == sample]
+
+print("New Sample:", sample)
+print("Prediction:", max(set(result), key=result.count))
