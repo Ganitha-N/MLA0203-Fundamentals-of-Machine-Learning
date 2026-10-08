@@ -1,0 +1,126 @@
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+print("STEP 1: DATASET")
+print("Input shape:", X.shape)
+print("Number of classes:", len(np.unique(y)))
+print("First 5 inputs:")
+print(X[:5])
+print("First 5 labels:")
+print(y[:5])
+
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+Y = np.zeros((len(y), 3))
+Y[np.arange(len(y)), y] = 1
+
+X_train, X_test, Y_train, Y_test = train_test_split(
+    X, Y, test_size=0.2, random_state=42, stratify=y
+)
+
+print("\nSTEP 2: DATA SPLITTING")
+print("Training samples:", len(X_train))
+print("Testing samples:", len(X_test))
+
+np.random.seed(42)
+
+input_neurons = 4
+hidden_neurons = 5
+output_neurons = 3
+learning_rate = 0.1
+epochs = 1000
+
+W1 = np.random.randn(input_neurons, hidden_neurons) * 0.1
+b1 = np.zeros((1, hidden_neurons))
+
+W2 = np.random.randn(hidden_neurons, output_neurons) * 0.1
+b2 = np.zeros((1, output_neurons))
+
+print("\nSTEP 3: NETWORK STRUCTURE")
+print("Input neurons:", input_neurons)
+print("Hidden neurons:", hidden_neurons)
+print("Output neurons:", output_neurons)
+print("Learning rate:", learning_rate)
+print("Epochs:", epochs)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+def softmax(x):
+    x = x - np.max(x, axis=1, keepdims=True)
+    exp_x = np.exp(x)
+    return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+
+print("\nSTEP 4: BACKPROPAGATION TRAINING")
+
+for epoch in range(epochs):
+
+    hidden_input = np.dot(X_train, W1) + b1
+    hidden_output = sigmoid(hidden_input)
+
+    output_input = np.dot(hidden_output, W2) + b2
+    output = softmax(output_input)
+
+    error = output - Y_train
+
+    dW2 = np.dot(hidden_output.T, error) / len(X_train)
+    db2 = np.sum(error, axis=0, keepdims=True) / len(X_train)
+
+    hidden_error = np.dot(error, W2.T)
+    hidden_delta = hidden_error * sigmoid_derivative(hidden_output)
+
+    dW1 = np.dot(X_train.T, hidden_delta) / len(X_train)
+    db1 = np.sum(hidden_delta, axis=0, keepdims=True) / len(X_train)
+
+    W2 -= learning_rate * dW2
+    b2 -= learning_rate * db2
+    W1 -= learning_rate * dW1
+    b1 -= learning_rate * db1
+
+    if epoch in [0, 1, 2, 9, 99, 499, 999]:
+        loss = -np.mean(Y_train * np.log(output + 1e-8))
+        print("Epoch", epoch + 1, "Loss:", round(loss, 6))
+
+print("\nSTEP 5: TRAINED WEIGHTS")
+print("Input to Hidden Weights:")
+print(np.round(W1, 4))
+
+print("\nHidden to Output Weights:")
+print(np.round(W2, 4))
+
+print("\nSTEP 6: TESTING")
+
+hidden_test = sigmoid(np.dot(X_test, W1) + b1)
+output_test = softmax(np.dot(hidden_test, W2) + b2)
+
+predicted = np.argmax(output_test, axis=1)
+actual = np.argmax(Y_test, axis=1)
+
+print("Actual labels:")
+print(actual)
+
+print("\nPredicted labels:")
+print(predicted)
+
+print("\nSTEP 7: PREDICTION RESULT")
+
+correct = np.sum(predicted == actual)
+total = len(actual)
+
+print("Correct predictions:", correct)
+print("Total predictions:", total)
+
+accuracy = (correct / total) * 100
+
+print("\nSTEP 8: FINAL ACCURACY")
+print("Accuracy =", round(accuracy, 2), "%")
